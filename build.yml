@@ -1,0 +1,63 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-action@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cargo
+          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+      - run: cargo install aidoku-cli
+      - run: cargo build --release --target wasm32-unknown-unknown
+      - run: aidoku-cli pack . -o manga18fx.aix
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension
+          path: manga18fx.aix
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension
+      - run: |
+          mkdir _site
+          cp manga18fx.aix _site/
+          cat > _site/index.json << 'EOF'
+          {
+            "sources": [{
+              "name": "Manga18fx",
+              "id": "manga18fx",
+              "version": "1.0.0",
+              "lang": "en",
+              "nsfw": 2,
+              "icon": "https://manga18fx.com/favicon.ico",
+              "url": "https://${{ github.repository_owner }}.github.io/aidoku-manga18fx/manga18fx.aix",
+              "description": "Read Manga, Manhua, and Manhwa online in English free at Manga18fx",
+              "creator": "${{ github.repository_owner }}"
+            }]
+          }
+          EOF
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - uses: actions/deploy-pages@v4
+        id: deployment
