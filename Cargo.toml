@@ -1,5 +1,5 @@
 [package]
-name = "manga18fx"
+name = "src/lib.rs"
 version = "1.0.0"
 edition = "2021"
 
