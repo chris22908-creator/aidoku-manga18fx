@@ -4,6 +4,8 @@ version = "1.0.0"
 edition = "2021"
 
 [lib]
+name = "lib.rs"
+path = "src/lib.rs"  # Change this to your actual file name
 crate-type = ["cdylib"]
 
 [dependencies]
